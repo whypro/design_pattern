@@ -1,5 +1,7 @@
 #include <iostream>
 #include <vector>
+#include <list>
+
 
 class MenuItem
 {
@@ -113,7 +115,46 @@ public:
 };
 
 
-class PancakeHouseMenu
+class CafeMenuIterator : public Iterator
+{
+    std::list<MenuItem*> items;
+    std::list<MenuItem*>::iterator it;
+public:
+    CafeMenuIterator(std::list<MenuItem*>& items)
+    {
+        this->items = items;
+        it = this->items.begin();
+    }
+
+    MenuItem* next()
+    {
+        MenuItem* menuItem = *it;
+        it++;
+        return menuItem;
+    }
+
+    bool hasNext()
+    {
+        if (it != items.end())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+};
+
+
+class Menu
+{
+public:
+    virtual Iterator* createIterator() = 0;
+};
+
+
+class PancakeHouseMenu : public Menu
 {
     std::vector<MenuItem*> menuItems;
 
@@ -147,7 +188,7 @@ public:
     }
 };
 
-class DinerMenu
+class DinerMenu : public Menu
 {
     static const int MAX_ITEMS = 6;
     int numberOfItems;
@@ -194,10 +235,47 @@ public:
 };
 
 
+class CafeMenu : public Menu
+{
+    std::list<MenuItem*> menuItems;
+
+public:
+    CafeMenu()
+    {
+        addItem("Veggie Burger and Air Fries", "Veggie burger on a whole wheat bun, lettuce, tomato, and fries", true, 3.99);
+        addItem("Soup of the day", "A cup of the soup of the day, with a side salad", false, 3.69);
+        addItem("Burrito", "A large burrito, with whole pinto beans, salsa, guacamole", true, 4.29);
+    }
+
+    void addItem(const std::string& name, const std::string& description, bool vegetarian, double price)
+    {
+        MenuItem* menuItem = new MenuItem(name, description, vegetarian, price);
+        menuItems.push_back(menuItem);
+    }
+
+    ~CafeMenu()
+    {
+        for (std::list<MenuItem*>::iterator it = menuItems.begin(); it != menuItems.end(); it++)
+        {
+            // std::cout << "~PancakeHouseMenu" << std::endl;
+            delete *it;
+        }
+    }
+
+    Iterator* createIterator()
+    {
+        return new CafeMenuIterator(menuItems);
+    }
+};
+
+
+
+
 class Waitress
 {
-    PancakeHouseMenu* pancakeHouseMenu;
-    DinerMenu* dinerMenu;
+    Menu* pancakeHouseMenu;
+    Menu* dinerMenu;
+    Menu* cafeMenu;
 
     void printMenu(Iterator* it)
     {
@@ -211,16 +289,18 @@ class Waitress
         }
     }
 public:
-    Waitress(PancakeHouseMenu* pancakeHouseMenu, DinerMenu* dinerMenu)
+    Waitress(Menu* pancakeHouseMenu, Menu* dinerMenu, Menu* cafeMenu)
     {
         this->pancakeHouseMenu = pancakeHouseMenu;
         this->dinerMenu = dinerMenu;
+        this->cafeMenu = cafeMenu;
     }
 
     void printMenu()
     {
         Iterator* pancakeIterator = pancakeHouseMenu->createIterator();
         Iterator* dinerIterator = dinerMenu->createIterator();
+        Iterator* cafeIterator = cafeMenu->createIterator();
 
         std::cout << "MENU" << std::endl;
         std::cout << "----" << std::endl;
@@ -228,7 +308,11 @@ public:
         printMenu(pancakeIterator);
         std::cout << "LANCH" << std::endl;
         printMenu(dinerIterator);
+        std::cout << "DINNER" << std::endl;
+        printMenu(cafeIterator);
 
+        delete pancakeIterator;
+        delete dinerIterator;
     }
 };
 
@@ -243,8 +327,9 @@ int main(int argc, char const *argv[])
 {
     PancakeHouseMenu pancakeHouseMenu;
     DinerMenu dinerMenu;
+    CafeMenu cafeMenu;
 
-    Waitress alice(&pancakeHouseMenu, &dinerMenu);
+    Waitress alice(&pancakeHouseMenu, &dinerMenu, &cafeMenu);
     alice.printMenu();
 
     return 0;

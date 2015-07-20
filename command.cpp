@@ -432,8 +432,8 @@ public:
 
     ~RemoteControl()
     {
-        delete onCommands;
-        delete offCommands;
+        delete[] onCommands;
+        delete[] offCommands;
         delete noCommand;
     }
 
