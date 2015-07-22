@@ -1,5 +1,5 @@
 objects = observer decorator simple_factory factory_method abstract_factory singleton command adapter facade
-objects += template_method iterator composite state
+objects += template_method iterator composite state compound
 # g++ -g $().cpp -o $()
 
 
