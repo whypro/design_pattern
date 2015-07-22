@@ -1,5 +1,7 @@
 #include "state.hpp"
+#include <cstdlib>
 
+#define WINNER_RATE 10      // 10 / 100
 
 NoQuarterState::NoQuarterState(GumballMachine* gumballMachine)
 {
@@ -30,6 +32,8 @@ void NoQuarterState::dispense()
 HasQuarterState::HasQuarterState(GumballMachine* gumballMachine)
 {
     this->gumballMachine = gumballMachine;
+
+    srand(time(NULL));
 }
 
 void HasQuarterState::insertQuarter()
@@ -47,7 +51,16 @@ void HasQuarterState::turnCrank()
 {
 
     std::cout << "You turned..." << std::endl;
-    gumballMachine->setState(gumballMachine->getSoldState());
+
+    if (gumballMachine->getCount() > 1 && (rand() % 100) < WINNER_RATE)
+    {
+        gumballMachine->setState(gumballMachine->getWinnerState());
+    }
+    else
+    {
+        gumballMachine->setState(gumballMachine->getSoldState());
+    }
+    
     gumballMachine->dispense();
 }
 
@@ -118,12 +131,58 @@ void SoldOutState::dispense()
 }
 
 
+WinnerState::WinnerState(GumballMachine* gumballMachine)
+{
+    this->gumballMachine = gumballMachine;
+}
+
+void WinnerState::insertQuarter()
+{
+    std::cout << "Please wait, we're already giving you a gumball" << std::endl;
+}
+
+void WinnerState::ejectQuarter()
+{
+    std::cout << "Sorry, you already turned the crank" << std::endl;
+}
+
+void WinnerState::turnCrank()
+{
+    std::cout << "Turning twice doesn't get you another gumball!" << std::endl;
+}
+
+void WinnerState::dispense()
+{
+    std::cout << "YOU'RE A WINNER! You get two gumballs for your quarter" << std::endl;
+    gumballMachine->releaseBall();
+    if (gumballMachine->getCount() > 0)
+    {
+        gumballMachine->releaseBall();
+        if (gumballMachine->getCount() > 0)
+        {
+            gumballMachine->setState(gumballMachine->getNoQuarterState());
+        }
+        else
+        {
+            std::cout << "Oops, out of gumballs!" << std::endl;
+            gumballMachine->setState(gumballMachine->getSoldOutState());
+        }
+    }
+    else
+    {
+        std::cout << "Oops, out of gumballs!" << std::endl;
+        gumballMachine->setState(gumballMachine->getSoldOutState());
+    }
+}
+
+
 GumballMachine::GumballMachine(int numberGumballs)
 {
     soldOutState = new SoldOutState(this);
     noQuarterState = new NoQuarterState(this);
     hasQuarterState = new HasQuarterState(this);
     soldState = new SoldState(this);
+    winnerState = new WinnerState(this);
 
     count = numberGumballs;
 
@@ -147,6 +206,8 @@ GumballMachine::~GumballMachine()
     hasQuarterState = NULL;
     delete soldState;
     soldState = NULL;
+    delete winnerState;
+    winnerState = NULL;
 }
 
 void GumballMachine::insertQuarter()
@@ -178,6 +239,12 @@ void GumballMachine::releaseBall()
     }
 }
 
+void GumballMachine::refill(int count)
+{
+    this->count = count;
+    state = noQuarterState;
+}
+
 void GumballMachine::setState(State* state)
 {
     this->state = state;
@@ -206,6 +273,11 @@ State* GumballMachine::getSoldState()
 State* GumballMachine::getSoldOutState()
 {
     return soldOutState;
+}
+
+State* GumballMachine::getWinnerState()
+{
+    return winnerState;
 }
 
 int GumballMachine::getCount()

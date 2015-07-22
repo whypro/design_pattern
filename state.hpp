@@ -76,6 +76,21 @@ public:
     void dispense();
 };
 
+class WinnerState : public State
+{
+    GumballMachine* gumballMachine;
+public:
+    WinnerState(GumballMachine* gumballMachine);
+
+    void insertQuarter();
+
+    void ejectQuarter();
+
+    void turnCrank();
+
+    void dispense();
+};
+
 
 class GumballMachine
 {
@@ -83,6 +98,7 @@ class GumballMachine
     State* noQuarterState;
     State* hasQuarterState;
     State* soldState;
+    State* winnerState;
 
     State* state;
     int count;
@@ -102,6 +118,8 @@ public:
 
     void releaseBall();
 
+    void refill(int count);
+
     void setState(State* state);
 
     State* getState();
@@ -113,6 +131,8 @@ public:
     State* getSoldState();
 
     State* getSoldOutState();
+
+    State* getWinnerState();
 
     int getCount();
 
