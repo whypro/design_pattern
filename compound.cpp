@@ -1,50 +1,193 @@
 #include <iostream>
 #include <vector>
 
+class QuackObservable;
 
-class Quackable
+class Observer
+{
+public:
+    virtual void update(QuackObservable* duck) = 0;
+};
+
+
+class Quackologist : public Observer
+{
+public:
+    void update(QuackObservable* duck)
+    {
+        std::cout << "Quackologist: " << duck << " just quacked" << std::endl;
+    }
+};
+
+
+class QuackObservable
+{
+public:
+    virtual void registerObserver(Observer* observer) = 0;
+    virtual void notifyObservers() = 0;
+};
+
+class Quackable : public QuackObservable
 {
 public:
     virtual void quack() = 0;
 };
 
 
+class Observable : public QuackObservable
+{
+    std::vector<Observer*> observers;
+    QuackObservable* duck;
+
+public:
+    Observable(QuackObservable* duck)
+    {
+        this->duck = duck;
+    }
+
+    void registerObserver(Observer* observer)
+    {
+        observers.push_back(observer);
+    }
+
+    void notifyObservers()
+    {
+        for (std::vector<Observer*>::iterator it = observers.begin(); it != observers.end(); it++)
+        {
+            (*it)->update(duck);
+        }
+    }
+};
+
+
 class MallardDuck : public Quackable
 {
+    Observable* observable;
 public:
+    MallardDuck()
+    {
+        observable = new Observable(this);
+    }
+
+    ~MallardDuck()
+    {
+        delete observable;
+        observable = NULL;
+    }
+
     void quack() 
     {
         std::cout << "Quack" << std::endl;
+        notifyObservers();
+    }
+
+    void registerObserver(Observer* observer)
+    {
+        observable->registerObserver(observer);
+    }
+
+    void notifyObservers()
+    {
+        observable->notifyObservers();
     }
 };
 
 
 class ReadheadDuck : public Quackable
 {
+    Observable* observable;
 public:
+    ReadheadDuck()
+    {
+        observable = new Observable(this);
+    }
+
+    ~ReadheadDuck()
+    {
+        delete observable;
+        observable = NULL;
+    }
+
     void quack()
     {
         std::cout << "Quack" << std::endl;
+        notifyObservers();
+    }
+
+    void registerObserver(Observer* observer)
+    {
+        observable->registerObserver(observer);
+    }
+
+    void notifyObservers()
+    {
+        observable->notifyObservers();
     }
 };
 
 
 class DuckCall : public Quackable
 {
+    Observable* observable;
 public:
+    DuckCall()
+    {
+        observable = new Observable(this);
+    }
+
+    ~DuckCall()
+    {
+        delete observable;
+        observable = NULL;
+    }
+
     void quack()
     {
         std::cout << "Kwak" << std::endl;
+        notifyObservers();
+    }
+
+    void registerObserver(Observer* observer)
+    {
+        observable->registerObserver(observer);
+    }
+
+    void notifyObservers()
+    {
+        observable->notifyObservers();
     }
 };
 
 
 class RubberDuck : public Quackable
 {
+    Observable* observable;
 public:
+    RubberDuck()
+    {
+        observable = new Observable(this);
+    }
+
+    ~RubberDuck()
+    {
+        delete observable;
+        observable = NULL;
+    }
+
     void quack()
     {
         std::cout << "Squeak" << std::endl;
+        notifyObservers();
+    }
+
+    void registerObserver(Observer* observer)
+    {
+        observable->registerObserver(observer);
+    }
+
+    void notifyObservers()
+    {
+        observable->notifyObservers();
     }
 };
 
@@ -62,21 +205,37 @@ public:
 class GooseAdapter : public Quackable
 {
     Goose* goose;
+    Observable* observable;
 public:
     GooseAdapter(Goose* goose)
     {
         this->goose = goose;
+        observable = new Observable(this);
     }
 
     ~GooseAdapter()
     {
         delete this->goose;
         this->goose = NULL;
+
+        delete observable;
+        observable = NULL;
     }
 
     void quack()
     {
         goose->honk();
+        notifyObservers();
+    }
+
+    void registerObserver(Observer* observer)
+    {
+        observable->registerObserver(observer);
+    }
+
+    void notifyObservers()
+    {
+        observable->notifyObservers();
     }
 };
 
@@ -106,6 +265,16 @@ public:
     static int getQuacks()
     {
         return numberOfQuacks;
+    }
+
+    void registerObserver(Observer* observer)
+    {
+        duck->registerObserver(observer);
+    }
+
+    void notifyObservers()
+    {
+        duck->notifyObservers();
     }
 };
 
@@ -173,7 +342,6 @@ public:
 class Flock : public Quackable
 {
     std::vector<Quackable*> quackers;
-
 public:
     ~Flock()
     {
@@ -182,6 +350,7 @@ public:
             delete *it;
             *it = NULL;
         }
+
     }
 
     void add(Quackable* quacker)
@@ -194,6 +363,22 @@ public:
         for (std::vector<Quackable*>::iterator it = quackers.begin(); it != quackers.end(); it++)
         {
             (*it)->quack();
+        }
+    }
+
+    void registerObserver(Observer* observer)
+    {
+        for (std::vector<Quackable*>::iterator it = quackers.begin(); it != quackers.end(); it++)
+        {
+            (*it)->registerObserver(observer);
+        }
+    }
+
+    void notifyObservers()
+    {
+        for (std::vector<Quackable*>::iterator it = quackers.begin(); it != quackers.end(); it++)
+        {
+            (*it)->notifyObservers();
         }
     }
 };
@@ -227,6 +412,9 @@ public:
         flockOfMallards->add(mallardDuckFour);
 
         flockOfDucks->add(flockOfMallards);
+
+        Quackologist quackologist;
+        flockOfDucks->registerObserver(&quackologist);
 
         std::cout << "Duck Simulator: Whole Flock Simulation" << std::endl;
         simulate(flockOfDucks);
