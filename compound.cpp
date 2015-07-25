@@ -66,6 +66,12 @@ public:
         this->goose = goose;
     }
 
+    ~GooseAdapter()
+    {
+        delete this->goose;
+        this->goose = NULL;
+    }
+
     void quack()
     {
         goose->honk();
@@ -83,6 +89,12 @@ public:
         this->duck = duck;
     }
 
+    ~QuackCounter()
+    {
+        delete this->duck;
+        this->duck = NULL;
+    }
+
     void quack()
     {
         duck->quack();
@@ -96,24 +108,76 @@ public:
 };
 
 
+class AbstractDuckFactory 
+{
+public:
+    virtual Quackable* createMallardDuck() = 0;
+    virtual Quackable* createRedheadDuck() = 0;
+    virtual Quackable* createDuckCall() = 0;
+    virtual Quackable* createRubberDuck() = 0;
+};
+
+
+class DuckFactory : public AbstractDuckFactory
+{
+public:
+    Quackable* createMallardDuck()
+    {
+        return new MallardDuck;
+    }
+
+    Quackable* createRedheadDuck()
+    {
+        return new ReadheadDuck;
+    }
+
+    Quackable* createDuckCall()
+    {
+        return new DuckCall;
+    }
+
+    Quackable* createRubberDuck()
+    {
+        return new RubberDuck;
+    }
+};
+
+
+class CountingDuckFactory : public AbstractDuckFactory
+{
+public:
+    Quackable* createMallardDuck()
+    {
+        return new QuackCounter(new MallardDuck);
+    }
+
+    Quackable* createRedheadDuck()
+    {
+        return new QuackCounter(new ReadheadDuck);
+    }
+
+    Quackable* createDuckCall()
+    {
+        return new QuackCounter(new DuckCall);
+    }
+
+    Quackable* createRubberDuck()
+    {
+        return new QuackCounter(new RubberDuck);
+    }
+};
+
+
 class DuckSimulator
 {
 public:
-    void simulate()
+    void simulate(AbstractDuckFactory* duckFactory)
     {
-
-        MallardDuck mallardDuck;
-        Quackable* mallardDuckCounter = new QuackCounter(&mallardDuck);
-        ReadheadDuck readheadDuck;
-        Quackable* readheadDuckCounter = new QuackCounter(&readheadDuck);
-        DuckCall duckCall;
-        Quackable* duckCallCounter = new QuackCounter(&duckCall);
-        RubberDuck rubberDuck;
-        Quackable* rubberDuckCounter = new QuackCounter(&rubberDuck);
-
-        Goose goose;
-        GooseAdapter gooseAdapter(&goose);
-        Quackable* gooseAdapterCounter = new QuackCounter(&gooseAdapter);
+        Quackable* mallardDuckCounter = duckFactory->createMallardDuck();
+        Quackable* readheadDuckCounter = duckFactory->createRedheadDuck();
+        Quackable* duckCallCounter = duckFactory->createDuckCall();
+        Quackable* rubberDuckCounter = duckFactory->createRubberDuck();
+        Quackable* gooseAdapterCounter = new QuackCounter(new GooseAdapter(new Goose));
 
         std::cout << "Duck Simulator" << std::endl;
 
@@ -143,13 +207,19 @@ public:
     }
 };
 
+
+
+
 int QuackCounter::numberOfQuacks = 0;
 
 int main(int argc, char const *argv[])
 {
+    AbstractDuckFactory* adf = new CountingDuckFactory;
     DuckSimulator ds;
-    ds.simulate();
+    ds.simulate(adf);
 
+    delete adf;
+    adf = NULL;
 
     return 0;
 }
