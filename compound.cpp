@@ -1,4 +1,6 @@
 #include <iostream>
+#include <vector>
+
 
 class Quackable
 {
@@ -168,37 +170,73 @@ public:
 };
 
 
+class Flock : public Quackable
+{
+    std::vector<Quackable*> quackers;
+
+public:
+    ~Flock()
+    {
+        for (std::vector<Quackable*>::iterator it = quackers.begin(); it != quackers.end(); it++)
+        {
+            delete *it;
+            *it = NULL;
+        }
+    }
+
+    void add(Quackable* quacker)
+    {
+        quackers.push_back(quacker);
+    }
+
+    void quack()
+    {
+        for (std::vector<Quackable*>::iterator it = quackers.begin(); it != quackers.end(); it++)
+        {
+            (*it)->quack();
+        }
+    }
+};
+
+
 class DuckSimulator
 {
 public:
     void simulate(AbstractDuckFactory* duckFactory)
     {
-        Quackable* mallardDuckCounter = duckFactory->createMallardDuck();
-        Quackable* readheadDuckCounter = duckFactory->createRedheadDuck();
-        Quackable* duckCallCounter = duckFactory->createDuckCall();
-        Quackable* rubberDuckCounter = duckFactory->createRubberDuck();
-        Quackable* gooseAdapterCounter = new QuackCounter(new GooseAdapter(new Goose));
+        Quackable* readheadDuck = duckFactory->createRedheadDuck();
+        Quackable* duckCall = duckFactory->createDuckCall();
+        Quackable* rubberDuck = duckFactory->createRubberDuck();
+        Quackable* gooseAdapter = new GooseAdapter(new Goose);
 
-        std::cout << "Duck Simulator" << std::endl;
+        Flock* flockOfDucks = new Flock;
+        flockOfDucks->add(readheadDuck);
+        flockOfDucks->add(duckCall);
+        flockOfDucks->add(rubberDuck);
+        flockOfDucks->add(gooseAdapter);
 
-        simulate(mallardDuckCounter);
-        simulate(readheadDuckCounter);
-        simulate(duckCallCounter);
-        simulate(rubberDuckCounter);
-        simulate(gooseAdapterCounter);
+        Quackable* mallardDuckOne = duckFactory->createMallardDuck();
+        Quackable* mallardDuckTwo = duckFactory->createMallardDuck();
+        Quackable* mallardDuckThree = duckFactory->createMallardDuck();
+        Quackable* mallardDuckFour = duckFactory->createMallardDuck();
+
+        Flock* flockOfMallards = new Flock;
+        flockOfMallards->add(mallardDuckOne);
+        flockOfMallards->add(mallardDuckTwo);
+        flockOfMallards->add(mallardDuckThree);
+        flockOfMallards->add(mallardDuckFour);
+
+        flockOfDucks->add(flockOfMallards);
+
+        std::cout << "Duck Simulator: Whole Flock Simulation" << std::endl;
+        simulate(flockOfDucks);
+
+        std::cout << "Duck Simulator: Mallard Flock Simulation" << std::endl;
+        simulate(flockOfMallards);
 
         std::cout << QuackCounter::getQuacks() << std::endl;
 
-        delete mallardDuckCounter;
-        mallardDuckCounter = NULL;
-        delete readheadDuckCounter;
-        readheadDuckCounter = NULL;
-        delete duckCallCounter;
-        duckCallCounter = NULL;
-        delete rubberDuckCounter;
-        rubberDuckCounter = NULL;
-        delete gooseAdapterCounter;
-        gooseAdapterCounter = NULL;
+        delete flockOfDucks;
     }
 
     void simulate(Quackable* duck)
@@ -206,6 +244,7 @@ public:
         duck->quack();
     }
 };
+
 
 
 
